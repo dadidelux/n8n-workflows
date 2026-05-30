@@ -1,0 +1,4 @@
+https://163.245.214.116 {
+    tls internal
+    reverse_proxy n8n-main:5678
+}
