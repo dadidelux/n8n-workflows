@@ -2,13 +2,17 @@ volumes:
   postgres_data:
   redis_data:
   n8n_data:
+  n8n_video_tmp:
 
 networks:
   n8n_network:
     driver: bridge
 
 x-n8n-common: &n8n-common
-  image: n8nio/n8n:latest
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: n8n-ffmpeg:local
   networks:
     - n8n_network
   environment:
@@ -19,6 +23,8 @@ x-n8n-common: &n8n-common
     - DB_POSTGRESDB_USER=${POSTGRES_USER}
     - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
     - EXECUTIONS_MODE=queue
+    - NODES_EXCLUDE=["n8n-nodes-base.localFileTrigger"]
+    - N8N_RESTRICT_FILE_ACCESS_TO=/data/video-tmp;~/.n8n-files
     - QUEUE_BULL_REDIS_HOST=redis
     - QUEUE_BULL_REDIS_PORT=6379
     - QUEUE_BULL_REDIS_PASSWORD=${REDIS_PASSWORD}
@@ -77,22 +83,29 @@ services:
       - "127.0.0.1:5678:5678"
     volumes:
       - n8n_data:/home/node/.n8n
+      - n8n_video_tmp:/data/video-tmp
     restart: unless-stopped
 
   n8n-worker-1:
     <<: *n8n-common
     container_name: n8n-worker-1
     command: worker --concurrency=${WORKER_CONCURRENCY}
+    volumes:
+      - n8n_video_tmp:/data/video-tmp
     restart: unless-stopped
 
   n8n-worker-2:
     <<: *n8n-common
     container_name: n8n-worker-2
     command: worker --concurrency=${WORKER_CONCURRENCY}
+    volumes:
+      - n8n_video_tmp:/data/video-tmp
     restart: unless-stopped
 
   n8n-worker-3:
     <<: *n8n-common
     container_name: n8n-worker-3
     command: worker --concurrency=${WORKER_CONCURRENCY}
+    volumes:
+      - n8n_video_tmp:/data/video-tmp
     restart: unless-stopped
